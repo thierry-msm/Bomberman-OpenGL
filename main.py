@@ -6,6 +6,7 @@ from OpenGL.GL import *
 import settings
 from state_manager import StateManager
 from core.score_manager import ScoreManager
+from render.text_renderer import TextRenderer
 from states.start_screen import StartScreenState
 from states.match_playing import MatchPlayingState
 from states.round_score import RoundScoreState
@@ -26,6 +27,9 @@ class Game:
         
         # Configuração do OpenGL
         self._init_opengl()
+        
+        # Renderizador de Textos
+        self.text_renderer = TextRenderer()
         
         # Gerenciamento de Pontos
         self.score_manager = ScoreManager()
