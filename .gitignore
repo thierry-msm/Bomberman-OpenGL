@@ -1,0 +1,20 @@
+# Project specification file
+especificacao_bomberman_open_gl.md
+
+# Python environment and caches
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+.env
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+
+# SKILLS
+.agents/
