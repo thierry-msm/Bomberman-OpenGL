@@ -1,23 +1,34 @@
-# Walkthrough — Fase 2: Telas, Texto e Interface
+# Walkthrough — Fase 3: Gameplay Principal
 
-Nesta etapa, implementamos com sucesso o renderizador de textos por textura OpenGL, o renderizador de HUD e enriquecemos visualmente todas as telas de transição com informações reais (título, instruções de controle, placares de rodada e final).
+Nesta etapa, implementamos a lógica e a física completas da rodada do jogo, incluindo a movimentação dos jogadores com deslizamento nas paredes, o posicionamento automático das bombas no grid, a propagação de explosões em cruz (com destruição de tijolos e reação em cadeia), power-ups e a verificação automática de vitórias ou empates.
 
 ## O que foi implementado
 
-### 1. Renderizador de Texto via OpenGL
-* **[render/text_renderer.py](file:///Users/user/Projects/Bomberman-OpenGL/render/text_renderer.py)**: Utiliza `pygame.font.Font` para renderizar o texto em uma `pygame.Surface`, convertendo a imagem em bytes (`RGBA`) e carregando-a na GPU como uma textura OpenGL 2D temporária (`glTexImage2D`). O texto é desenhado em um quad (`GL_QUADS`) com coordenadas mapeadas corretamente para a projeção ortográfica 2D invertida do jogo. Para evitar vazamento de memória de GPU, a textura é deletada (`glDeleteTextures`) imediatamente após o desenho. Também inclui cache de fontes para máxima eficiência e suporte a alinhamento (`left`, `center`, `right`).
+### 1. Entidades do Jogo (Diretório `entities/`)
+* **[entities/player.py](file:///Users/user/Projects/Bomberman-OpenGL/entities/player.py)**: `@dataclass` `Player` com id, posição flutuante no grid, velocidade, limite de bombas, alcance das explosões e estado de vida.
+* **[entities/bomb.py](file:///Users/user/Projects/Bomberman-OpenGL/entities/bomb.py)**: `@dataclass` `Bomb` com posição no grid, temporizador (3s), alcance e a flag `collision_locked`.
+* **[entities/explosion.py](file:///Users/user/Projects/Bomberman-OpenGL/entities/explosion.py)**: `@dataclass` `Explosion` armazenando a lista de coordenadas afetadas e o timer de vida (0.5s).
+* **[entities/powerup.py](file:///Users/user/Projects/Bomberman-OpenGL/entities/powerup.py)**: `@dataclass` `PowerUp` com posição e tipo (`bomb_limit`, `bomb_range`, `speed`).
+* **[entities/tilemap.py](file:///Users/user/Projects/Bomberman-OpenGL/entities/tilemap.py)**: Classe `TileMap` representada por listas de listas Python (13 colunas x 11 linhas). Gera automaticamente o mapa com bordas indestrutíveis, grelhas internas de pilares e 60% de tijolos destrutíveis aleatórios, garantindo segurança de spawn nos cantos para P1 e P2.
 
-### 2. Renderizador da HUD
-* **[render/hud_renderer.py](file:///Users/user/Projects/Bomberman-OpenGL/render/hud_renderer.py)**: Desenha uma barra superior cinza escuro com uma borda dourada fina (desativando texturas 2D via `glDisable(GL_TEXTURE_2D)` para desenhar geometria plana pura). Exibe os placares dinâmicos de cada jogador (P1 em azul, P2 em vermelho) nas extremidades da barra e o status centralizado utilizando o renderizador de texto.
+### 2. Física e Colisão
+* **[core/collision.py](file:///Users/user/Projects/Bomberman-OpenGL/core/collision.py)**: 
+  * Implementa caixa delimitadora AABB menor que 1.0 (tamanho 0.7) para permitir deslizamento suave dos jogadores.
+  * Implementa a **regra do bomb trap**: o jogador dono da bomba pode passar por cima dela logo após plantá-la. Uma vez que ele saia completamente do tile da bomba, a colisão é ativada (`collision_locked = True`) e ela passa a bloqueá-lo.
+  * Verifica colisões de jogadores com explosões (morte) e com power-ups (coleta).
 
-### 3. Telas Enriquecidas com Textos e Controles
-* **[states/start_screen.py](file:///Users/user/Projects/Bomberman-OpenGL/states/start_screen.py)**: Exibe o título grande do jogo, um divisor dourado semitransparente, a lista detalhada de controles de movimentação/bombas de cada jogador, e a instrução "Pressione ENTER para iniciar".
-* **[states/round_score.py](file:///Users/user/Projects/Bomberman-OpenGL/states/round_score.py)**: Mostra quem venceu a rodada atual ou se foi empate, exibe painéis visuais cinzas translúcidos com o placar numérico de cada jogador lado a lado, e a instrução para continuar.
-* **[states/game_over.py](file:///Users/user/Projects/Bomberman-OpenGL/states/game_over.py)**: Exibe o vencedor definitivo da partida, o placar final e as instruções para reiniciar (`R`) ou voltar ao menu inicial (`ESC`).
+### 3. Inputs e Controles
+* **[core/input_handler.py](file:///Users/user/Projects/Bomberman-OpenGL/core/input_handler.py)**: Mapeia as teclas contínuas e calcula vetores de direção normalizados.
+  * **Jogador 1 (Azul)**: W, A, S, D para andar e `ESPAÇO` para plantar bomba (discreto).
+  * **Jogador 2 (Vermelho)**: Setas direcionais para andar e `ENTER` para plantar bomba (discreto).
 
-### 4. Integração no Jogo
-* **[main.py](file:///Users/user/Projects/Bomberman-OpenGL/main.py)**: Integra o `TextRenderer` centralizado e o compartilha em todos os estados.
-* **[states/match_playing.py](file:///Users/user/Projects/Bomberman-OpenGL/states/match_playing.py)**: Agora desenha o grid de fundo da arena de combate (verde oliva escuro), renderiza a HUD dinâmica no topo e fornece as instruções de teclas simuladas no centro da tela.
+### 4. Gerenciamento de Estado e Rodada (Diretório `core/`)
+* **[core/game_state.py](file:///Users/user/Projects/Bomberman-OpenGL/core/game_state.py)**: Concentra e atualiza a simulação física: movimentação com deslizamento independente em X e Y, expiração de timers, propagação de explosões em cruz (interrompidas por blocos indestrutíveis e destruindo tijolos), reações em cadeia (detonação imediata de bombas adjacentes), surgimento aleatório de power-ups (25% ao quebrar tijolos) e aplicação de buffs.
+* **[core/round_manager.py](file:///Users/user/Projects/Bomberman-OpenGL/core/round_manager.py)**: Analisa a integridade de vida de P1 e P2 a cada frame para decretar vitória da rodada ou empate caso ambos morram na mesma explosão.
+
+### 5. Integração com a Interface
+* **[states/match_playing.py](file:///Users/user/Projects/Bomberman-OpenGL/states/match_playing.py)**: Integrou o ciclo de vida completo de `GameState` no loop de jogo.
+  * Desenha os blocos indestrutíveis (cinza volumoso), blocos destrutíveis (marrom texturizado), bombas (esferas pretas com pavio), chamas da explosão (laranja com centro amarelo incandescente), power-ups (coloridos com centro branco) e jogadores (Azul e Vermelho com detalhes de face).
 
 ---
 
@@ -28,12 +39,9 @@ No terminal, execute o jogo:
 venv/bin/python main.py
 ```
 
-### Controles de Simulação de Fluxo
-* **Tela Inicial**: Pressione `ENTER` para iniciar o combate.
-* **Arena da Partida (Verde/Cinza)**: 
-  * Visualize a HUD no topo com os nomes dos jogadores e controles.
-  * Pressione `1` para simular vitória do Jogador 1 (Azul).
-  * Pressione `2` para simular vitória do Jogador 2 (Vermelho).
-  * Pressione `3` para simular um empate.
-* **Tela do Placar (Marrom)**: Veja o vencedor da rodada e o placar numérico atualizado. Pressione `ENTER` para retornar à partida.
-* **Tela Final (Vermelho Escuro)**: Veja quem conquistou a vitória geral (ao alcançar 5 vitórias). Pressione `R` para jogar novamente ou `ESC` para voltar à tela inicial.
+### Testes Recomendados
+1. **Movimentação suave**: Controle ambos os jogadores no teclado simultaneamente. Verifique se eles deslizam suavemente pelos cantos dos corredores.
+2. **Bomb Trap**: Plante uma bomba e certifique-se de que consegue andar sobre ela. Saia do tile e tente voltar; o jogador deve ser bloqueado.
+3. **Explosões e Cadeia**: Coloque duas bombas próximas uma da outra. A explosão da primeira deve desencadear a detonação imediata da segunda.
+4. **Power-ups**: Destrua blocos com bombas para revelar power-ups (Ciano: alcance, Magenta: bombas extras, Amarelo: velocidade) e colete-os para testar os efeitos.
+5. **Condição de Vitória**: Elimine o oponente (ou suicide-se) para testar a transição automática de placares da rodada até o fim de jogo (5 vitórias).
