@@ -20,4 +20,4 @@ ENV/
 .agents/
 
 # explanations
-.explanations/
+explanations/
