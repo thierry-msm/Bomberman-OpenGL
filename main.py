@@ -69,7 +69,7 @@ class Game:
         }
 
     def _init_opengl(self):
-        # Configure glOrtho conforme descrito na especificação
+        # Configure glOrtho 
         glViewport(0, 0, settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT)
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
