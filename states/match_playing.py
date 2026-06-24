@@ -12,6 +12,15 @@ class MatchPlayingState(BaseState):
         print("[State] Entrou no MATCH_PLAYING. Inicializando rodada...")
         # Cria um novo estado limpo de jogo/rodada
         game.game_state = GameState()
+        
+        # Atribui as texturas carregadas em main.py
+        if hasattr(game, "player_textures"):
+            game.game_state.players[1].texture_id = game.player_textures.get(1)
+            game.game_state.players[2].texture_id = game.player_textures.get(2)
+        if hasattr(game, "player_walk_textures"):
+            game.game_state.players[1].walk_textures = game.player_walk_textures.get(1, [])
+            game.game_state.players[2].walk_textures = game.player_walk_textures.get(2, [])
+            
         self.round_ended = False
 
     def exit(self, game):

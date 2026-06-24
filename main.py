@@ -46,6 +46,23 @@ class Game:
         
         # Inicia no estado de tela inicial
         self.state_manager.change_state(self.states["START_SCREEN"], self)
+        
+        # Carregar texturas dos jogadores (idle + caminhada)
+        from render.texture_loader import load_texture
+        self.player_textures = {
+            1: load_texture("assets/textures/player1.png"),
+            2: load_texture("assets/textures/player2.png")
+        }
+        self.player_walk_textures = {
+            1: [
+                load_texture("assets/textures/player1_walk1.png"),
+                load_texture("assets/textures/player1_walk2.png"),
+            ],
+            2: [
+                load_texture("assets/textures/player2_walk1.png"),
+                load_texture("assets/textures/player2_walk2.png"),
+            ]
+        }
 
     def _init_opengl(self):
         # Configure glOrtho conforme descrito na especificação

@@ -34,6 +34,13 @@ class GameState:
                 
             dx, dy = input_handler.get_movement_direction(pressed_keys, player_id)
             if dx != 0.0 or dy != 0.0:
+                player.is_moving = True
+                # Avança timer de animação de caminhada
+                player.anim_timer += dt
+                if player.anim_timer >= player.anim_speed:
+                    player.anim_timer -= player.anim_speed
+                    player.anim_frame += 1
+
                 # Calcula deslocamento pretendido
                 d_col = dx * player.speed * dt
                 d_row = dy * player.speed * dt
@@ -50,6 +57,11 @@ class GameState:
                 if not (collision.collides_with_map(player.col, new_row, self.tilemap) or
                         collision.collides_with_bombs(player.col, new_row, player, self.bombs)):
                     player.row = new_row
+            else:
+                # Parado: voltar ao frame idle
+                player.is_moving = False
+                player.anim_timer = 0.0
+                player.anim_frame = 0
 
         # 2. Atualizar estado do Bomb Trap (verificar se os donos já saíram do tile de suas bombas)
         collision.check_all_bombs_trap_exit(self.players, self.bombs)

@@ -168,9 +168,11 @@ def _render_players(game_state):
         y = hud_h + player.row * ts
 
         if player.texture_id is not None:
+            # Obter textura correta baseada no estado de animação
+            current_tex = player.get_current_texture()
             # Renderizar com textura
             glEnable(GL_TEXTURE_2D)
-            draw_textured_quad(player.texture_id, x, y, ts, ts)
+            draw_textured_quad(current_tex, x, y, ts, ts)
             glDisable(GL_TEXTURE_2D)
         else:
             # Fallback: geometria colorida com detalhes faciais
