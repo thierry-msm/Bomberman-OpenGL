@@ -31,17 +31,23 @@ def _draw_solid_quad(x, y, w, h, color):
 
 # ── Camadas individuais ─────────────────────────────────────────────────────
 
-def _render_background_and_map(game_state):
-    """Camada 1: Fundo da arena e blocos do mapa (geometria pura, sem texturas)."""
+def _render_background_and_map(game):
+    """Camada 1: Fundo da arena e blocos do mapa (com texturas se disponíveis, senão geometria)."""
     glDisable(GL_TEXTURE_2D)
 
+    game_state = game.game_state
     tilemap = game_state.tilemap
     ts = settings.TILE_SIZE
     hud_h = settings.HUD_HEIGHT
 
-    # Fundo verde escuro para as células livres
+    # Paleta: referências cromáticas internacionais (PT / AR)
+    # Fundo verde-oliva neutro para as células livres
     _draw_solid_quad(0, hud_h, settings.SCREEN_WIDTH, settings.SCREEN_HEIGHT - hud_h,
-                     (0.15, 0.22, 0.12, 1.0))
+                     (0.18, 0.25, 0.14, 1.0))
+
+    # Obter texturas se disponíveis no objeto game
+    wall_tex = getattr(game, "map_textures", {}).get("wall") if hasattr(game, "map_textures") else None
+    brick_tex = getattr(game, "map_textures", {}).get("brick") if hasattr(game, "map_textures") else None
 
     for row_idx in range(tilemap.rows):
         for col_idx in range(tilemap.cols):
@@ -50,27 +56,47 @@ def _render_background_and_map(game_state):
             y = hud_h + row_idx * ts
 
             if tile == 1:  # Parede indestrutível
-                _draw_solid_quad(x, y, ts, ts, (0.22, 0.22, 0.22, 1.0))
-                _draw_solid_quad(x + 3, y + 3, ts - 6, ts - 6, (0.32, 0.32, 0.32, 1.0))
-                # Brilho superior para dar volume
-                _draw_solid_quad(x + 3, y + 3, ts - 6, 4, (0.42, 0.42, 0.42, 1.0))
+                if wall_tex is not None:
+                    glEnable(GL_TEXTURE_2D)
+                    draw_textured_quad(wall_tex, x, y, ts, ts)
+                    glDisable(GL_TEXTURE_2D)
+                else:
+                    # Fallback (geometria pura) - Portugal: vermelho-escarlate envelhecido
+                    _draw_solid_quad(x, y, ts, ts, (0.48, 0.08, 0.08, 1.0))
+                    _draw_solid_quad(x + 3, y + 3, ts - 6, ts - 6, (0.65, 0.50, 0.10, 1.0))
+                    # Brilho superior para dar volume
+                    _draw_solid_quad(x + 3, y + 3, ts - 6, 4, (0.80, 0.65, 0.15, 1.0))
+                    # Detalhe geométrico no centro: losango 4x4 px em dourado escuro
+                    glBegin(GL_QUADS)
+                    glColor4f(0.50, 0.38, 0.05, 1.0)
+                    glVertex2f(x + ts // 2, y + ts // 2 - 2)
+                    glVertex2f(x + ts // 2 + 2, y + ts // 2)
+                    glVertex2f(x + ts // 2, y + ts // 2 + 2)
+                    glVertex2f(x + ts // 2 - 2, y + ts // 2)
+                    glEnd()
             elif tile == 2:  # Bloco destrutível (tijolo)
-                _draw_solid_quad(x + 1, y + 1, ts - 2, ts - 2, (0.50, 0.25, 0.05, 1.0))
-                _draw_solid_quad(x + 4, y + 4, ts - 8, ts - 8, (0.62, 0.33, 0.12, 1.0))
-                # Linhas de "argamassa" horizontais e verticais para simular tijolos
-                glColor4f(0.40, 0.20, 0.04, 1.0)
-                glBegin(GL_QUADS)
-                # Linha horizontal central
-                glVertex2f(x + 2, y + ts / 2 - 1)
-                glVertex2f(x + ts - 2, y + ts / 2 - 1)
-                glVertex2f(x + ts - 2, y + ts / 2 + 1)
-                glVertex2f(x + 2, y + ts / 2 + 1)
-                # Linha vertical central
-                glVertex2f(x + ts / 2 - 1, y + 2)
-                glVertex2f(x + ts / 2 + 1, y + 2)
-                glVertex2f(x + ts / 2 + 1, y + ts - 2)
-                glVertex2f(x + ts / 2 - 1, y + ts - 2)
-                glEnd()
+                if brick_tex is not None:
+                    glEnable(GL_TEXTURE_2D)
+                    draw_textured_quad(brick_tex, x, y, ts, ts)
+                    glDisable(GL_TEXTURE_2D)
+                else:
+                    # Fallback (geometria pura) - Argentina: azul-celeste claro com detalhes em branco sujo
+                    _draw_solid_quad(x + 1, y + 1, ts - 2, ts - 2, (0.35, 0.65, 0.90, 1.0))
+                    _draw_solid_quad(x + 4, y + 4, ts - 8, ts - 8, (0.92, 0.92, 0.92, 1.0))
+                    # Linhas de "argamassa" na cor branca levemente translúcida
+                    glColor4f(0.95, 0.95, 0.95, 0.6)
+                    glBegin(GL_QUADS)
+                    # Linha horizontal central
+                    glVertex2f(x + 2, y + ts / 2 - 1)
+                    glVertex2f(x + ts - 2, y + ts / 2 - 1)
+                    glVertex2f(x + ts - 2, y + ts / 2 + 1)
+                    glVertex2f(x + 2, y + ts / 2 + 1)
+                    # Linha vertical central
+                    glVertex2f(x + ts / 2 - 1, y + 2)
+                    glVertex2f(x + ts / 2 + 1, y + 2)
+                    glVertex2f(x + ts / 2 + 1, y + ts - 2)
+                    glVertex2f(x + ts / 2 - 1, y + ts - 2)
+                    glEnd()
 
 
 def _render_powerups(game_state):
@@ -222,7 +248,7 @@ def render_match(game):
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
     # 1. Fundo e mapa
-    _render_background_and_map(gs)
+    _render_background_and_map(game)
 
     # 2. Power-ups
     _render_powerups(gs)

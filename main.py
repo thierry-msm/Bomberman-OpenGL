@@ -63,6 +63,10 @@ class Game:
                 load_texture("assets/textures/player2_walk2.png"),
             ]
         }
+        self.map_textures = {
+            "wall": load_texture("assets/textures/bloco_paredes.png"),
+            "brick": load_texture("assets/textures/bloco_caixas.png")
+        }
 
     def _init_opengl(self):
         # Configure glOrtho conforme descrito na especificação
